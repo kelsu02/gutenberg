@@ -11,48 +11,27 @@ data class GutenbergProps(
     val localeSlug: String,
     val postType: String,
     val editorTheme: Bundle?,
-    var translations: Bundle? = null,
-    var isDarkMode: Boolean? = null,
-    var htmlModeEnabled: Boolean? = null
+    var translations: Bundle,
+    var isDarkMode: Boolean,
+    var htmlModeEnabled: Boolean
 ) : Parcelable {
-
-    constructor(
-        enableMentions: Boolean,
-        enableUnsupportedBlockEditor: Boolean,
-        localeSlug: String,
-        postType: String,
-        editorTheme: Bundle?
-    ) : this(
-            enableMentions = enableMentions,
-            enableUnsupportedBlockEditor = enableUnsupportedBlockEditor,
-            localeSlug = localeSlug,
-            postType = postType,
-            editorTheme = editorTheme,
-            translations = null,
-            isDarkMode = null,
-            htmlModeEnabled = null
-    )
-
-    private fun getCapabilities() = Bundle().apply {
-        putBoolean(PROP_CAPABILITIES_MENTIONS, enableMentions)
-        putBoolean( PROP_CAPABILITIES_UNSUPPORTED_BLOCK_EDITOR, enableUnsupportedBlockEditor)
-    }
 
     fun getInitialProps(bundle: Bundle?) = (bundle ?: Bundle()).apply {
         putString(PROP_INITIAL_DATA, "")
         putString(PROP_INITIAL_TITLE, "")
         putString(PROP_LOCALE, localeSlug)
         putString(PROP_POST_TYPE, postType)
-        putBundle(PROP_TRANSLATIONS, requireNotNull(translations))
-        putBoolean(PROP_INITIAL_HTML_MODE_ENABLED, requireNotNull(htmlModeEnabled))
-        putBundle(PROP_CAPABILITIES, getCapabilities())
+        putBundle(PROP_TRANSLATIONS, translations)
+        putBoolean(PROP_INITIAL_HTML_MODE_ENABLED, htmlModeEnabled)
 
-        editorTheme?.getSerializable(PROP_COLORS)?.let { colors ->
-            putSerializable(PROP_COLORS, colors)
-        }
+        putBundle(PROP_CAPABILITIES, Bundle().apply {
+            putBoolean(PROP_CAPABILITIES_MENTIONS, enableMentions)
+            putBoolean(PROP_CAPABILITIES_UNSUPPORTED_BLOCK_EDITOR, enableUnsupportedBlockEditor)
+        })
 
-        editorTheme?.getSerializable(PROP_GRADIENTS)?.let { gradients ->
-            putSerializable(PROP_GRADIENTS, gradients)
+        editorTheme?.also {
+            getSerializable(PROP_COLORS)?.let { putSerializable(PROP_COLORS, it) }
+            getSerializable(PROP_GRADIENTS)?.let { putSerializable(PROP_GRADIENTS, it) }
         }
     }
 
