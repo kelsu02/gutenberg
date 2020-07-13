@@ -1,4 +1,9 @@
 /**
+ * External dependencies
+ */
+import { truncate } from 'lodash';
+
+/**
  * WordPress dependencies
  */
 import { useSelect } from '@wordpress/data';
@@ -48,5 +53,17 @@ export default function BlockTitle( { clientId } ) {
 		return null;
 	}
 
-	return getBlockLabel( blockType, attributes );
+	const { __experimentalLabel, title } = blockType;
+
+	// Check if it supports the label first. getBlockLabel will return the title
+	// if no label exists. We want to know if the label is undefined so that we
+	// can format it uniquely.
+	const label =
+		__experimentalLabel &&
+		truncate( getBlockLabel( blockType, attributes ), { length: 25 } );
+
+	if ( label ) {
+		return `${ title } (${ label })`;
+	}
+	return title;
 }
