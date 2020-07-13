@@ -48,10 +48,12 @@ module.exports = async function start( { spinner, debug, update } ) {
 
 	const config = await initConfig( { spinner, debug } );
 
+	// Check if the hash of the config has changed. If so, run configuration.
+	const configHash = md5( config );
 	const workDirectoryPath = config.workDirectoryPath;
 	const shouldConfigureWp =
 		update ||
-		( await didCacheChange( CONFIG_CACHE_KEY, md5( config ), {
+		( await didCacheChange( CONFIG_CACHE_KEY, configHash, {
 			workDirectoryPath,
 		} ) );
 
@@ -68,16 +70,18 @@ module.exports = async function start( { spinner, debug, update } ) {
 	 */
 	if ( shouldConfigureWp ) {
 		await stop( { spinner, debug } );
+		spinner.text = 'Downloading sources.';
 	}
 
-	await dockerCompose.upOne( 'mysql', {
-		config: config.dockerComposeConfigPath,
-		log: config.debug,
-	} );
+	await Promise.all( [
+		dockerCompose.upOne( 'mysql', {
+			config: config.dockerComposeConfigPath,
+			log: config.debug,
+		} ),
+		shouldConfigureWp && downloadSources( config, spinner ),
+	] );
 
 	if ( shouldConfigureWp ) {
-		spinner.text = 'Downloading sources.';
-		await downloadSources( config, spinner );
 		await setupWordPressDirectories( config );
 	}
 
@@ -124,7 +128,7 @@ module.exports = async function start( { spinner, debug, update } ) {
 		] );
 
 		// Set the cache key once everything has been configured.
-		await setCache( CONFIG_CACHE_KEY, md5( config ), {
+		await setCache( CONFIG_CACHE_KEY, configHash, {
 			workDirectoryPath,
 		} );
 	}
